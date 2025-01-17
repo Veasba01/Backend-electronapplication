@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { Panaderia } from './panaderia.entity';
+import { Panaderia } from '../panaderia/panaderia.entity';
 
 @Entity()
 export class RazonSocial {

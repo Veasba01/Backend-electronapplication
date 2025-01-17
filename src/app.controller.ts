@@ -5,6 +5,6 @@ import { AppService } from './app.service';
 export class AppController {
   @Get('test')
   testConnection(): string {
-    return 'La conexión al backend funciona correctamente.';
+    return 'La conexión al backend funciona correctamente. PINGA';
   }
 }

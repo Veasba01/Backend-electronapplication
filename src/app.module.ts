@@ -1,20 +1,24 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RazonSocial } from './entities/razon-social.entity';
-import { Panaderia } from './entities/panaderia.entity';
-import { Empleado } from './entities/empleado.entity';
-import { AppController } from './app.controller';
+import { RazonSocialModule } from './razon-social/razon-social.module';
+import { PanaderiaModule } from './panaderia/panaderia.module';
+import { PuestoModule } from './puesto/puesto.module';
+import { HorasTrabajadasModule } from './horas-trabajadas/horas-trabajadas.module';
+import { EmpleadoModule } from './empleado/empleado.module';
 
 @Module({
-  controllers: [AppController],
   imports: [
     TypeOrmModule.forRoot({
       type: 'sqlite',
       database: 'database.sqlite',
-      entities: [RazonSocial, Panaderia, Empleado],
-      synchronize: true,
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      synchronize: true, // Deshabilitar en producción
     }),
-    TypeOrmModule.forFeature([RazonSocial, Panaderia, Empleado]),
+    RazonSocialModule,
+    PanaderiaModule,
+    PuestoModule,
+    HorasTrabajadasModule,
+    EmpleadoModule,
   ],
 })
 export class AppModule {}
