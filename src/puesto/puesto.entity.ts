@@ -10,7 +10,7 @@ export class Puesto {
   nombre: string;
 
   @Column('decimal', { precision: 10, scale: 2 })
-  salarioHora: number;
+  salario: number;
 
   @OneToMany(() => Empleado, (empleado) => empleado.puesto)
   empleados: Empleado[];

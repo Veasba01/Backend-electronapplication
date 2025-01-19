@@ -10,6 +10,9 @@ export class Empleado {
   @Column()
   nombre: string;
 
+  @Column()
+  cedula: string;
+
   @ManyToOne(() => Panaderia, (panaderia) => panaderia.empleados, {
     onDelete: 'CASCADE',
   })
