@@ -1,7 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from 'typeorm';
 import { Panaderia } from '../panaderia/panaderia.entity';
 import { Puesto } from '../puesto/puesto.entity';
-import { HorasTrabajadas } from '../horas-trabajadas/horas-trabajadas.entity';
 
 @Entity()
 export class Empleado {
@@ -21,6 +20,4 @@ export class Empleado {
   })
   puesto: Puesto;
 
-  @OneToMany(() => HorasTrabajadas, (horas) => horas.empleado)
-  horasTrabajadas: HorasTrabajadas[];
 }
