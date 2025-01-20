@@ -11,6 +11,12 @@ export class Empleado {
   nombre: string;
 
   @Column()
+  primerApellido: string;
+
+  @Column()
+  segundoApellido: string;
+
+  @Column()
   cedula: string;
 
   @ManyToOne(() => Panaderia, (panaderia) => panaderia.empleados, {

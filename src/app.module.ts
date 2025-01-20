@@ -5,6 +5,7 @@ import { PanaderiaModule } from './panaderia/panaderia.module';
 import { PuestoModule } from './puesto/puesto.module';
 import { EmpleadoModule } from './empleado/empleado.module';
 import { PlanillaQuincenalModule } from './planilla-quincenal/planilla-quincenal.module';
+import { EmpleadoDespedidoModule } from './empleado-despedido/empleado-despedido.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { PlanillaQuincenalModule } from './planilla-quincenal/planilla-quincenal
     PuestoModule,
     EmpleadoModule,
     PlanillaQuincenalModule,
+    EmpleadoDespedidoModule,
   ],
 })
 export class AppModule {}
