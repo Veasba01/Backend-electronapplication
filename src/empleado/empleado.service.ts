@@ -1,13 +1,16 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Empleado } from './empleado.entity';
+import { Panaderia } from '../panaderia/panaderia.entity';
 
 @Injectable()
 export class EmpleadoService {
   constructor(
     @InjectRepository(Empleado)
     private readonly empleadoRepository: Repository<Empleado>,
+    @InjectRepository(Panaderia)
+    private readonly panaderiaRepository: Repository<Panaderia>,
   ) {}
 
   async crear(data: Partial<Empleado>): Promise<Empleado> {
@@ -42,4 +45,15 @@ export class EmpleadoService {
     const empleado = await this.obtenerPorId(id);
     await this.empleadoRepository.remove(empleado);
   }
+
+  async obtenerPorRazonSocial(razonSocialId: number): Promise<Empleado[]> {
+    return await this.empleadoRepository
+      .createQueryBuilder('empleado')
+      .leftJoinAndSelect('empleado.panaderia', 'panaderia')
+      .leftJoinAndSelect('panaderia.razonSocial', 'razon_social') // Nombre correcto de la tabla
+      .leftJoinAndSelect('empleado.puesto', 'puesto')
+      .where('razon_social.id = :razonSocialId', { razonSocialId })
+      .getMany();
+  }
+  
 }
