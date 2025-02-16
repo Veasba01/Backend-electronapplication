@@ -18,6 +18,15 @@ export class PlanillaEmpleado {
   @Column()
   nombreEmpleado: string;
 
+  @Column()
+  primerApellidoEmpleado: string;
+
+  @Column()
+  segundoApellidoEmpleado: string;
+
+  @Column()
+  cedulaEmpleado: string;
+
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   salarioMes: number;
 

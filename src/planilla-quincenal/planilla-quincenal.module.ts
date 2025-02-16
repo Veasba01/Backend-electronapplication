@@ -10,5 +10,6 @@ import { PlanillaQuincenalController } from './planilla-quincenal.controller';
   imports: [TypeOrmModule.forFeature([PlanillaQuincenal, PlanillaEmpleado, RazonSocial])],
   controllers: [PlanillaQuincenalController],
   providers: [PlanillaQuincenalService],
+  exports: [PlanillaQuincenalService],
 })
 export class PlanillaQuincenalModule {}

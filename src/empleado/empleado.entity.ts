@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
 import { Panaderia } from '../panaderia/panaderia.entity';
 import { Puesto } from '../puesto/puesto.entity';
 
@@ -29,4 +29,6 @@ export class Empleado {
   })
   puesto: Puesto;
 
+  @Column({ type: 'date', nullable: true }) // Añadir la fecha de ingreso
+  fechaIngreso: Date;
 }

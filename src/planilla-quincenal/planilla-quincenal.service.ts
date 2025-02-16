@@ -96,15 +96,12 @@ export class PlanillaQuincenalService {
   
 
   async obtenerPorId(id: number): Promise<PlanillaQuincenal> {
-    const planilla = await this.planillaQuincenalRepository.findOne({
+    return await this.planillaQuincenalRepository.findOne({
       where: { id },
-      relations: ['detalles'],
+      relations: ['razonSocial', 'detalles', 'detalles.panaderia'], // Asegura que se incluya la razón social y panaderías
     });
-    if (!planilla) {
-      throw new NotFoundException(`Planilla con ID ${id} no encontrada`);
-    }
-    return planilla;
   }
+  
 
   async actualizar(id: number, data: Partial<PlanillaQuincenal>): Promise<PlanillaQuincenal> {
     const planilla = await this.obtenerPorId(id);

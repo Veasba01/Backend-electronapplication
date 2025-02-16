@@ -6,6 +6,7 @@ import { PuestoModule } from './puesto/puesto.module';
 import { EmpleadoModule } from './empleado/empleado.module';
 import { PlanillaQuincenalModule } from './planilla-quincenal/planilla-quincenal.module';
 import { EmpleadoDespedidoModule } from './empleado-despedido/empleado-despedido.module';
+import { PlanillaPdfModule } from './planilla-pdf/planilla-pdf.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { EmpleadoDespedidoModule } from './empleado-despedido/empleado-despedido
     EmpleadoModule,
     PlanillaQuincenalModule,
     EmpleadoDespedidoModule,
+    PlanillaPdfModule,
   ],
 })
 export class AppModule {}
