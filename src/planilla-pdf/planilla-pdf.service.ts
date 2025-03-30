@@ -10,7 +10,7 @@ export class PlanillaPdfService {
   async generatePlanillaPDF(planillaId: number, res: Response) {
     const planilla = await this.planillaService.obtenerPorId(planillaId);
     if (!planilla) {
-      throw new Error('Planilla no encontrada');
+        throw new Error('Planilla no encontrada');
     }
 
     // 📌 Crear documento en MODO HORIZONTAL
@@ -30,113 +30,124 @@ export class PlanillaPdfService {
 
     // 📌 Encabezados de la tabla
     const tableHeaders = [
-      'Empleado', 'S/Mes', 'S/Hora', 'H/S', 'H/E',
-      'S/Normal', 'S/Extras', 'Otros/Ing', 'S/Bruto', 
-      'CCSS', 'BPDC', 'Emba', 'Adel', 'S/Neto'
+        'Empleado', 'S/Mes', 'S/Hora', 'H/S', 'H/E',
+        'S/Normal', 'S/Extras', 'Otros/Ing', 'S/Bruto', 
+        'CCSS', 'BPDC', 'Emba', 'Adel', 'S/Neto'
     ];
 
-    // 📌 Datos de la tabla
-    const tableRows = planilla.detalles.map((detalle) => [
-      `${detalle.primerApellidoEmpleado} ${detalle.segundoApellidoEmpleado} \n${detalle.nombreEmpleado}`,
-      detalle.salarioMes.toFixed(2),
-      detalle.salarioHora.toFixed(2),
-      detalle.horasSencillas.toString(),
-      detalle.horasExtras.toString(),
-      detalle.salarioNormal.toFixed(2),
-      detalle.salarioExtras.toFixed(2),
-      detalle.otrosIngresos.toFixed(2),
-      detalle.salarioTotalBruto.toFixed(2),
-      detalle.ccss.toFixed(2),
-      detalle.bpdc.toFixed(2),
-      detalle.embargos.toFixed(2),
-      detalle.adelantos.toFixed(2),
-      detalle.salarioNeto.toFixed(2),
-    ]);
+    // 📌 Ordenar empleados por panadería y primer apellido
+    const empleadosOrdenados = planilla.detalles.sort((a, b) => 
+        a.panaderia.nombre.localeCompare(b.panaderia.nombre) ||
+        a.primerApellidoEmpleado.localeCompare(b.primerApellidoEmpleado)
+    );
 
-    // 📌 Agregar la fila de totales
-    const totalRow = [
-      'TOTALES',
-      '-',
-      '-',
-      '-',
-      '-',
-      planilla.totalesSalarioNormal.toFixed(2),
-      planilla.totalesSalarioExtras.toFixed(2),
-      '-',
-      planilla.totalesSalarioBruto.toFixed(2),
-      planilla.totalesCCSS.toFixed(2),
-      planilla.totalesBPDC.toFixed(2),
-      planilla.totalesEmbargos.toFixed(2),
-      planilla.totalesAdelantos.toFixed(2),
-      planilla.totalesSalarioNeto.toFixed(2),
-    ];
-
-    tableRows.push(totalRow);
-
-    // 📌 Definir posición inicial de la tabla
     let startX = 20;
     let startY = doc.y + 10;
-    const columnWidths = [60, 60, 60, 20, 20, 60, 60, 60, 60, 60, 50, 60, 60, 60]; // Anchos de columna
-    const rowHeight = 35; // Más espacio entre filas
+    const columnWidths = [60, 60, 60, 20, 20, 60, 60, 60, 60, 60, 50, 60, 60, 60];
+    const rowHeight = 35;
+    let panaderiaActual = '';
 
-    // 📌 Dibujar encabezados con líneas horizontales
+    // 📌 Dibujar encabezados de la tabla
     doc.font('Helvetica-Bold').fontSize(10);
     tableHeaders.forEach((header, index) => {
-      doc.text(header, startX, startY, { width: columnWidths[index], align: 'center' });
-      startX += columnWidths[index];
+        doc.text(header, startX, startY, { width: columnWidths[index], align: 'center' });
+        startX += columnWidths[index];
     });
-
-    // 📌 Línea separadora debajo de los encabezados
-    doc.moveTo(20, startY + rowHeight - 5)
-      .lineTo(800, startY + rowHeight - 5)
-      .stroke();
 
     startY += rowHeight;
     startX = 20;
 
-    // 📌 Dibujar filas de la tabla
+    // 📌 Dibujar filas de empleados
     doc.font('Helvetica').fontSize(9);
-    tableRows.forEach((row, rowIndex) => {
-      if (startY + rowHeight > doc.page.height - 50) {
-        doc.addPage({ size: 'A4', layout: 'landscape', margin: 20 });
-        startY = 50;
-        startX = 20;
+    empleadosOrdenados.forEach((detalle, index) => {
+        // 📌 Insertar fila de panadería si cambia
+        if (detalle.panaderia.nombre !== panaderiaActual) {
+            if (index !== 0) {
+                startY += 10; // Espacio adicional entre panaderías
+            }
 
-        // 📌 Volver a dibujar los encabezados en la nueva página
-        doc.font('Helvetica-Bold').fontSize(10);
-        tableHeaders.forEach((header, index) => {
-          doc.text(header, startX, startY, { width: columnWidths[index], align: 'center' });
-          startX += columnWidths[index];
+            doc.font('Helvetica-Bold').fontSize(10).text(detalle.panaderia.nombre.toUpperCase(), startX, startY, {
+                width: 800, align: 'center'
+            });
+
+            panaderiaActual = detalle.panaderia.nombre;
+            startY += rowHeight;
+        }
+
+        // 📌 Verificar si hay suficiente espacio en la página
+        if (startY + rowHeight > doc.page.height - 50) {
+            doc.addPage({ size: 'A4', layout: 'landscape', margin: 20 });
+            startY = 50;
+            startX = 20;
+
+            // 📌 Volver a dibujar los encabezados en la nueva página
+            doc.font('Helvetica-Bold').fontSize(10);
+            tableHeaders.forEach((header, index) => {
+                doc.text(header, startX, startY, { width: columnWidths[index], align: 'center' });
+                startX += columnWidths[index];
+            });
+
+            startY += rowHeight;
+            startX = 20;
+        }
+
+        // 📌 Dibujar fila del empleado
+        doc.font('Helvetica').fontSize(9);
+        const row = [
+            `${detalle.primerApellidoEmpleado} ${detalle.segundoApellidoEmpleado} \n${detalle.nombreEmpleado}`,
+            detalle.salarioMes.toLocaleString(),
+            detalle.salarioHora.toLocaleString(),
+            detalle.horasSencillas.toString(),
+            detalle.horasExtras.toString(),
+            detalle.salarioNormal.toLocaleString(),
+            detalle.salarioExtras.toLocaleString(),
+            detalle.otrosIngresos.toLocaleString(),
+            detalle.salarioTotalBruto.toLocaleString(),
+            detalle.ccss.toLocaleString(),
+            detalle.bpdc.toLocaleString(),
+            detalle.embargos.toLocaleString(),
+            detalle.adelantos.toLocaleString(),
+            detalle.salarioNeto.toLocaleString(),
+        ];
+
+        row.forEach((cell, index) => {
+            doc.text(cell, startX, startY, { width: columnWidths[index], align: 'center' });
+            startX += columnWidths[index];
         });
-
-        // 📌 Línea separadora en la nueva página
-        doc.moveTo(20, startY + rowHeight - 5)
-          .lineTo(800, startY + rowHeight - 5)
-          .stroke();
 
         startY += rowHeight;
         startX = 20;
-      }
+    });
 
-      // 📌 Dibujar las celdas de la fila
-      doc.font(rowIndex === tableRows.length - 1 ? 'Helvetica-Bold' : 'Helvetica').fontSize(9);
-      row.forEach((cell, index) => {
+    // 📌 Agregar la fila de totales
+    startY += 10; // Espacio antes de los totales
+    const totalRow = [
+        'TOTALES',
+        '-',
+        '-',
+        '-',
+        '-',
+        planilla.totalesSalarioNormal.toLocaleString(),
+        planilla.totalesSalarioExtras.toLocaleString(),
+        '-',
+        planilla.totalesSalarioBruto.toLocaleString(),
+        planilla.totalesCCSS.toLocaleString(),
+        planilla.totalesBPDC.toLocaleString(),
+        planilla.totalesEmbargos.toLocaleString(),
+        planilla.totalesAdelantos.toLocaleString(),
+        planilla.totalesSalarioNeto.toLocaleString(),
+    ];
+
+    doc.font('Helvetica-Bold').fontSize(10);
+    totalRow.forEach((cell, index) => {
         doc.text(cell, startX, startY, { width: columnWidths[index], align: 'center' });
         startX += columnWidths[index];
-      });
-
-      // 📌 Dibujar línea separadora entre filas
-      doc.moveTo(20, startY + rowHeight - 5)
-        .lineTo(800, startY + rowHeight - 5)
-        .stroke();
-
-      startY += rowHeight;
-      startX = 20;
     });
 
     // 📌 Finalizar documento
     doc.end();
-  }
+}
+
 
   async generateComprobantesPDF(planillaId: number, res: Response) {
     const planilla = await this.planillaService.obtenerPorId(planillaId);
