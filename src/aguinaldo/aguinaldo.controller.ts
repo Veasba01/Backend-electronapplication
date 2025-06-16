@@ -70,4 +70,9 @@ export class AguinaldoController {
     await this.aguinaldoService.resetAguinaldos(anio);
     return { message: `Todos los registros de aguinaldo del año ${anio} han sido eliminados` };
   }
+
+  @Get('ano-actual')
+  async getAguinaldoYearActual(): Promise<{ anio: number; periodo: string }> {
+    return this.aguinaldoService.getAguinaldoYearActual();
+  }
 }

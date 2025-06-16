@@ -24,10 +24,9 @@ export class Aguinaldo {
 
   @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   fechaCreacion: Date;
-
   @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   fechaActualizacion: Date;
 
-  @Column({ type: 'integer', default: () => new Date().getFullYear() })
+  @Column({ type: 'integer' })
   anio: number;
 }

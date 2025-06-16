@@ -45,12 +45,12 @@ export class PlanillaQuincenalService {
       const detalleEntities = empleadosOrdenados.map((detalle) =>
         this.planillaEmpleadoRepository.create(detalle),
       );
-      planilla.detalles = await this.planillaEmpleadoRepository.save(detalleEntities);
-
-      // Registrar automáticamente en aguinaldo para cada empleado
+      planilla.detalles = await this.planillaEmpleadoRepository.save(detalleEntities);      // Registrar automáticamente en aguinaldo para cada empleado
       for (const detalle of planilla.detalles) {
         try {
           const nombreCompleto = `${detalle.nombreEmpleado} ${detalle.primerApellidoEmpleado} ${detalle.segundoApellidoEmpleado}`;
+          
+          console.log(`Registrando en aguinaldo - Empleado: ${detalle.cedulaEmpleado}, Fecha planilla: ${planilla.fechaInicio}, Tipo: ${typeof planilla.fechaInicio}`);
           
           await this.aguinaldoService.registrarSalarioBruto({
             nombreCompleto: nombreCompleto.trim(),
@@ -58,6 +58,7 @@ export class PlanillaQuincenalService {
             razonSocial: razonSocialEntity.nombre,
             panaderia: detalle.panaderia?.nombre || 'No especificada',
             salarioTotalBruto: detalle.salarioTotalBruto,
+            fechaPlanilla: planilla.fechaInicio, // Usar la fecha de inicio de la planilla
           });
         } catch (error) {
           console.error(`Error al registrar salario en aguinaldo para empleado ${detalle.cedulaEmpleado}:`, error);
