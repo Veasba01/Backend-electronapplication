@@ -5,8 +5,10 @@ import { PanaderiaModule } from './panaderia/panaderia.module';
 import { PuestoModule } from './puesto/puesto.module';
 import { EmpleadoModule } from './empleado/empleado.module';
 import { PlanillaQuincenalModule } from './planilla-quincenal/planilla-quincenal.module';
+import { PlanillaEmpleadoModule } from './planilla-empleado/planilla-empleado.module';
 import { EmpleadoDespedidoModule } from './empleado-despedido/empleado-despedido.module';
 import { PlanillaPdfModule } from './planilla-pdf/planilla-pdf.module';
+import { AguinaldoModule } from './aguinaldo/aguinaldo.module';
 
 @Module({
   imports: [
@@ -21,8 +23,10 @@ import { PlanillaPdfModule } from './planilla-pdf/planilla-pdf.module';
     PuestoModule,
     EmpleadoModule,
     PlanillaQuincenalModule,
+    PlanillaEmpleadoModule,
     EmpleadoDespedidoModule,
     PlanillaPdfModule,
+    AguinaldoModule,
   ],
 })
 export class AppModule {}

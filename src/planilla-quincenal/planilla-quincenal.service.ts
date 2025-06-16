@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { PlanillaQuincenal } from './planilla-quincenal.entity';
 import { PlanillaEmpleado } from '../planilla-empleado/planilla-empleado.entity';
 import { RazonSocial } from '../razon-social/razon-social.entity';
+import { AguinaldoService } from '../aguinaldo/aguinaldo.service';
 
 @Injectable()
 export class PlanillaQuincenalService {
@@ -14,6 +15,7 @@ export class PlanillaQuincenalService {
         private readonly planillaEmpleadoRepository: Repository<PlanillaEmpleado>,
         @InjectRepository(RazonSocial)
         private readonly razonSocialRepository: Repository<RazonSocial>,
+        private readonly aguinaldoService: AguinaldoService,
       ) {}
 
   async crear(data: Partial<PlanillaQuincenal>): Promise<PlanillaQuincenal> {
@@ -39,13 +41,29 @@ export class PlanillaQuincenalService {
           return a.nombreEmpleado.localeCompare(b.nombreEmpleado);
         }
         return a.panaderia.nombre.localeCompare(b.panaderia.nombre);
-      });
-  
-      // Crear y guardar los detalles
+      });      // Crear y guardar los detalles
       const detalleEntities = empleadosOrdenados.map((detalle) =>
         this.planillaEmpleadoRepository.create(detalle),
       );
       planilla.detalles = await this.planillaEmpleadoRepository.save(detalleEntities);
+
+      // Registrar automáticamente en aguinaldo para cada empleado
+      for (const detalle of planilla.detalles) {
+        try {
+          const nombreCompleto = `${detalle.nombreEmpleado} ${detalle.primerApellidoEmpleado} ${detalle.segundoApellidoEmpleado}`;
+          
+          await this.aguinaldoService.registrarSalarioBruto({
+            nombreCompleto: nombreCompleto.trim(),
+            cedulaEmpleado: detalle.cedulaEmpleado,
+            razonSocial: razonSocialEntity.nombre,
+            panaderia: detalle.panaderia?.nombre || 'No especificada',
+            salarioTotalBruto: detalle.salarioTotalBruto,
+          });
+        } catch (error) {
+          console.error(`Error al registrar salario en aguinaldo para empleado ${detalle.cedulaEmpleado}:`, error);
+          // No falla la creación de la planilla si hay error en aguinaldo
+        }
+      }
   
       // Calcular los totales
       planilla.totalesSalarioNormal = planilla.detalles.reduce(
