@@ -163,15 +163,14 @@ export class PlanillaPdfService {
     res.setHeader('Content-Disposition', `attachment; filename=Comprobantes_Pago_${planillaId}.pdf`);
   
     doc.pipe(res);
-  
     planilla.detalles.forEach((empleado, index) => {
-      // 📌 Control para dos comprobantes por hoja
+      // 📌 Control para dos comprobantes por hoja (ajustado)
       if (index % 2 === 0 && index > 0) {
         doc.addPage();
       }
   
-      // 📌 Posición fija para el inicio de cada comprobante
-      const comprobanteStartY = index % 2 === 0 ? 30 : 400;
+      // 📌 Posición optimizada para 2 comprobantes por hoja
+      const comprobanteStartY = index % 2 === 0 ? 40 : 420; // Más espacio entre comprobantes
       const leftMargin = 40;
       const pageWidth = 550;
   
@@ -183,86 +182,132 @@ export class PlanillaPdfService {
       doc.text(empleado.panaderia.nombre, leftMargin, doc.y + 5);
       doc.text(`Quincena del ${planilla.fechaInicio} AL ${planilla.fechaFinal}`, { align: 'center' });
   
-      let startY = doc.y + 15;
-  
-      // 📌 Información del empleado (con más espacio entre tablas)
-      this.drawTable(doc, [
-        ['Nombre:', `${empleado.primerApellidoEmpleado} ${empleado.segundoApellidoEmpleado} ${empleado.nombreEmpleado}`, 'Cédula:', empleado.cedulaEmpleado],
-        ['Salario Mensual:', empleado.salarioMes.toLocaleString(), '', '']
-      ], [100, 200, 80, 100], startY);
-  
-      startY += 40;
-  
-      // 📌 Tabla de Horas Trabajadas (con más espacio)
-      this.drawTable(doc, [
-        ['Horas Trabajadas', 'Normales', 'Extras', 'Dobles'],
-        ['Cantidad', empleado.horasSencillas, empleado.horasExtras, 0]
-      ], [130, 70, 70, 70], startY);
-  
-      startY += 40;
-  
-      // 📌 Tabla de Salario Bruto
-      this.drawTable(doc, [
-        ['Salario Bruto', 'Normales', 'Extraordinario', 'Otros Ingresos', 'Total Bruto'],
-        ['Monto', empleado.salarioNormal.toLocaleString(), empleado.salarioExtras.toLocaleString(), empleado.otrosIngresos.toLocaleString(), empleado.salarioTotalBruto.toLocaleString()]
-      ], [110, 80, 80, 80, 100], startY);
-  
-      startY += 40;
-  
-      // 📌 Tabla de Deducciones
-      this.drawTable(doc, [
-        ['Deducciones', 'CCSS', 'Banco Pop.', 'Embargos', 'Adelantos', 'Total Deducciones'],
-        ['Monto', empleado.ccss.toLocaleString(), empleado.bpdc.toLocaleString(), empleado.embargos.toLocaleString(), empleado.adelantos.toLocaleString(), (empleado.ccss + empleado.bpdc + empleado.embargos + empleado.adelantos).toLocaleString()]
-      ], [90, 80, 80, 80, 80, 80], startY);
-  
-      startY += 40;
-  
-      // 📌 Tabla de Total a Pagar
-      this.drawTable(doc, [['TOTAL A PAGAR', empleado.salarioNeto.toLocaleString()]], [280, 100], startY, true);
-  
-      startY += 50;
-  
-      // 📌 Línea separadora entre comprobantes
-      doc.moveTo(leftMargin, startY).lineTo(pageWidth, startY).stroke();
+      let startY = doc.y + 15;      // 📌 Información del empleado (horizontal compacto)
+      doc.font('Helvetica-Bold').fontSize(9);
+      doc.text(`EMPLEADO: ${empleado.primerApellidoEmpleado} ${empleado.segundoApellidoEmpleado}, ${empleado.nombreEmpleado}`, leftMargin, startY);
+      doc.text(`CÉDULA: ${empleado.cedulaEmpleado}`, leftMargin + 300, startY);
+      startY += 12;
+      doc.text(`SALARIO MENSUAL: ${empleado.salarioMes.toLocaleString()}`, leftMargin, startY);
+      startY += 20;
+
+      // 📌 Sección de Horas y Salarios (todo en una tabla horizontal)
+      this.drawCompactTable(doc, [
+        ['CONCEPTO', 'HORAS', 'TARIFA/MONTO', 'TOTAL'],
+        ['Salario Normal', empleado.horasSencillas.toString(), `${(empleado.salarioNormal / empleado.horasSencillas || 0).toLocaleString()}`, `${empleado.salarioNormal.toLocaleString()}`],
+        ['Horas Extras', empleado.horasExtras.toString(), `${empleado.horasExtras > 0 ? (empleado.salarioExtras / empleado.horasExtras).toLocaleString() : '0'}`, `${empleado.salarioExtras.toLocaleString()}`],
+        ['Otros Ingresos', '-', '-', `${empleado.otrosIngresos.toLocaleString()}`],
+        ['TOTAL BRUTO', '', '', `${empleado.salarioTotalBruto.toLocaleString()}`]
+      ], [140, 60, 100, 100], startY);
+
+      startY += 95;
+
+      // 📌 Deducciones y Total (horizontal compacto)
+      const totalDeducciones = empleado.ccss + empleado.bpdc + empleado.embargos + empleado.adelantos;
+      this.drawCompactTable(doc, [
+        ['DEDUCCIONES', 'CCSS', 'BANCO POP.', 'EMBARGOS', 'ADELANTOS', 'TOTAL DED.', 'NETO A PAGAR'],
+        ['MONTOS', `${empleado.ccss.toLocaleString()}`, `${empleado.bpdc.toLocaleString()}`, `${empleado.embargos.toLocaleString()}`, `${empleado.adelantos.toLocaleString()}`, `${totalDeducciones.toLocaleString()}`, `${empleado.salarioNeto.toLocaleString()}`]
+      ], [70, 70, 70, 70, 70, 70, 90], startY);      startY += 55;
+
+      // 📌 Línea separadora entre comprobantes (solo si no es el último del par)
+      if (index % 2 === 0) {
+        doc.moveTo(leftMargin, startY + 10).lineTo(pageWidth, startY + 10).stroke('#cccccc');
+      }
     });
   
     // 📌 Finalizar documento
     doc.end();
   }
-  
   /**
-   * 📌 Función para dibujar tablas en el PDF con más espacio entre ellas.
+   * 📌 Función para dibujar tablas en el PDF con diseño espacioso y legible.
    */
   private drawTable(doc: any, data: any[][], colWidths: number[], startY: number, boldLastRow = false) {
-    let startX = 40;
-    let rowHeight = 25; // Más espacio entre filas
-  
-    // 📌 Dibujar encabezados
-    doc.font('Helvetica-Bold').fontSize(9);
-    data[0].forEach((header, index) => {
-      doc.text(header, startX, startY, { width: colWidths[index], align: 'center' });
-      startX += colWidths[index];
-    });
-  
-    startY += rowHeight;
-    startX = 40;
-  
-    // 📌 Dibujar datos con más espacio entre tablas
-    doc.font('Helvetica').fontSize(9);
-    for (let i = 1; i < data.length; i++) {
-      if (boldLastRow && i === data.length - 1) {
-        doc.font('Helvetica-Bold');
-      }
-  
-      data[i].forEach((cell, index) => {
-        doc.text(cell.toString(), startX, startY, { width: colWidths[index], align: 'center' });
-        startX += colWidths[index];
+    const leftMargin = 40;
+    let currentY = startY;
+    const rowHeight = 22;
+    const cellPadding = 8;
+
+    // 📌 Dibujar cada fila con bordes y espaciado
+    data.forEach((row, rowIndex) => {
+      let currentX = leftMargin;
+      
+      row.forEach((cell, colIndex) => {
+        const cellWidth = colWidths[colIndex];
+        
+        // Configurar estilo según el tipo de fila
+        if (rowIndex === 0) {
+          // Encabezado con fondo gris y borde más grueso
+          doc.rect(currentX, currentY, cellWidth, rowHeight)
+             .fillAndStroke('#e8e8e8', '#000000');
+        } else if (boldLastRow && rowIndex === data.length - 1) {
+          // Última fila destacada para totales
+          doc.rect(currentX, currentY, cellWidth, rowHeight)
+             .fillAndStroke('#f5f5f5', '#000000');
+        } else {
+          // Filas normales
+          doc.rect(currentX, currentY, cellWidth, rowHeight)
+             .stroke('#666666');
+        }
+        
+        currentX += cellWidth;
       });
-  
-      startY += rowHeight;
-      startX = 40;
-    }
-  }  
+      
+      currentY += rowHeight;
+    });
+
+    // 📌 Agregar texto con mejor espaciado
+    currentY = startY;
+    data.forEach((row, rowIndex) => {
+      let currentX = leftMargin;
+      
+      // Configurar fuente según el tipo de fila
+      if (rowIndex === 0) {
+        doc.font('Helvetica-Bold').fontSize(9).fillColor('#000000');
+      } else if (boldLastRow && rowIndex === data.length - 1) {
+        doc.font('Helvetica-Bold').fontSize(10).fillColor('#000000');
+      } else {
+        doc.font('Helvetica').fontSize(9).fillColor('#333333');
+      }
+      
+      row.forEach((cell, colIndex) => {
+        const cellWidth = colWidths[colIndex];
+        const textY = currentY + (rowHeight / 2) - 4; // Centrar verticalmente
+        
+        // Alineación mejorada
+        let alignment = 'left';
+        let textX = currentX + cellPadding;
+        
+        if (colIndex === 0) {
+          alignment = 'left'; // Primera columna siempre a la izquierda
+        } else if (typeof cell === 'string' && (cell.includes('₡') || !isNaN(Number(cell.replace(/[₡,]/g, ''))))) {
+          alignment = 'right'; // Números y montos a la derecha
+          textX = currentX + cellWidth - cellPadding;
+        } else {
+          alignment = 'center'; // Resto centrado
+          textX = currentX + (cellWidth / 2);
+        }
+        
+        const textOptions: any = { 
+          width: cellWidth - (cellPadding * 2), 
+          align: alignment,
+          lineBreak: false
+        };
+        
+        if (alignment === 'center') {
+          textOptions.width = cellWidth;
+          textX = currentX;
+        } else if (alignment === 'right') {
+          textOptions.width = cellWidth - cellPadding;
+          textX = currentX + cellPadding;
+        }
+        
+        doc.text(cell.toString(), textX, textY, textOptions);
+        
+        currentX += cellWidth;
+      });
+      
+      currentY += rowHeight;
+    });
+  }
 
   async generateResumenPDF(planillaId: number, res: Response) {
     const planilla = await this.planillaService.obtenerPorId(planillaId);
@@ -355,6 +400,85 @@ export class PlanillaPdfService {
 
       startY += rowHeight;
       startX = 40;
+    });
+  }
+
+  /**
+   * 📌 Función para dibujar tablas compactas horizontales optimizadas para comprobantes.
+   */
+  private drawCompactTable(doc: any, data: any[][], colWidths: number[], startY: number) {
+    const leftMargin = 40;
+    let currentY = startY;
+    const rowHeight = 18;
+    const cellPadding = 3;
+
+    // 📌 Dibujar cada fila con bordes compactos
+    data.forEach((row, rowIndex) => {
+      let currentX = leftMargin;
+      
+      row.forEach((cell, colIndex) => {
+        const cellWidth = colWidths[colIndex];
+        
+        // Configurar estilo según el tipo de fila
+        if (rowIndex === 0) {
+          // Encabezado con fondo gris
+          doc.rect(currentX, currentY, cellWidth, rowHeight)
+             .fillAndStroke('#e0e0e0', '#000000');
+        } else if (rowIndex === data.length - 1 && (cell.toString().includes('TOTAL') || cell.toString().includes('NETO'))) {
+          // Última fila destacada para totales
+          doc.rect(currentX, currentY, cellWidth, rowHeight)
+             .fillAndStroke('#f8f8f8', '#000000');
+        } else {
+          // Filas normales
+          doc.rect(currentX, currentY, cellWidth, rowHeight)
+             .stroke('#666666');
+        }
+        
+        currentX += cellWidth;
+      });
+      
+      currentY += rowHeight;
+    });
+
+    // 📌 Agregar texto compacto
+    currentY = startY;
+    data.forEach((row, rowIndex) => {
+      let currentX = leftMargin;
+      
+      // Configurar fuente según el tipo de fila
+      if (rowIndex === 0) {
+        doc.font('Helvetica-Bold').fontSize(8).fillColor('#000000');
+      } else if (rowIndex === data.length - 1 && (row.some(cell => cell.toString().includes('TOTAL') || cell.toString().includes('NETO')))) {
+        doc.font('Helvetica-Bold').fontSize(8).fillColor('#000000');
+      } else {
+        doc.font('Helvetica').fontSize(8).fillColor('#333333');
+      }
+      
+      row.forEach((cell, colIndex) => {
+        const cellWidth = colWidths[colIndex];
+        const textY = currentY + (rowHeight / 2) - 3; // Centrar verticalmente
+        
+        // Alineación inteligente
+        let alignment = 'center';
+        if (colIndex === 0) {
+          alignment = 'left'; // Primera columna a la izquierda
+        } else if (cell.toString().includes('₡') || !isNaN(Number(cell.toString().replace(/[₡,]/g, '')))) {
+          alignment = 'right'; // Números y montos a la derecha
+        }
+        
+        const textOptions: any = { 
+          width: cellWidth - (cellPadding * 2), 
+          align: alignment,
+          lineBreak: false
+        };
+        
+        const textX = currentX + cellPadding;
+        doc.text(cell.toString(), textX, textY, textOptions);
+        
+        currentX += cellWidth;
+      });
+      
+      currentY += rowHeight;
     });
   }
 
